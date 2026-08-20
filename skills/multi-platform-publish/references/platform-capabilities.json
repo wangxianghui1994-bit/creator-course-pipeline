@@ -1,0 +1,12 @@
+{
+  "version": "0.1",
+  "platforms": {
+    "douyin": {"keyword_fields": ["keywords", "hashtags"], "remote_verification": "manual"},
+    "bilibili": {"keyword_fields": ["tags"], "remote_verification": "manual"},
+    "youtube": {"keyword_fields": ["tags"], "remote_verification": "manual"}
+  },
+  "aitoearn": {
+    "readonly": ["platforms", "accounts", "options", "flow", "record", "work"],
+    "write_operations": false
+  }
+}

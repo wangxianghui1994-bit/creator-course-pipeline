@@ -1,0 +1,4 @@
+interface:
+  display_name: "Course Production Pipeline"
+  short_description: "Build and verify local course-video packages"
+  default_prompt: "Use $course-production-pipeline to render or validate a numbered course episode locally, then stop before public publishing."
