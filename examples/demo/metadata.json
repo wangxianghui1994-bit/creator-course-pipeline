@@ -1,0 +1,16 @@
+{
+  "title": "Synthetic course episode",
+  "description": "Generic metadata for the local-only demo.",
+  "keyword_policy": {
+    "core": ["learning", "practice"],
+    "episode": ["demo-video", "local-qa"],
+    "reject_unlisted": true
+  },
+  "douyin": {
+    "keywords": ["learning", "practice", "demo-video", "local-qa"],
+    "hashtags": ["learning", "practice", "demo-video", "local-qa"]
+  },
+  "bilibili": {"tags": ["learning", "practice", "demo-video", "local-qa"]},
+  "youtube": {"tags": ["learning", "practice", "demo-video", "local-qa"]},
+  "policy": {"publish": false, "schedule": false, "delete": false}
+}

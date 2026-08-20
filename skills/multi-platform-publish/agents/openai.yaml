@@ -1,0 +1,4 @@
+interface:
+  display_name: "Multi-platform Draft Preparation"
+  short_description: "Validate keywords and unpublished platform drafts"
+  default_prompt: "Use $multi-platform-publish to validate canonical keywords and safe draft state, or run a read-only AiToEarn capability query. Never publish."

@@ -1,0 +1,12 @@
+{
+  "version": "0.1",
+  "adapters": [
+    {
+      "id": "ffmpeg-demo",
+      "status": "default",
+      "entrypoint": "scripts/ffmpeg_adapter.py",
+      "interface": "render(job)",
+      "capabilities": ["crop", "scale-pad", "subtitles", "h264", "aac"]
+    }
+  ]
+}
