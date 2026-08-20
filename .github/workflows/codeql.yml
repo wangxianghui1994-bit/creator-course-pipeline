@@ -22,3 +22,8 @@ jobs:
         with:
           languages: python
       - uses: github/codeql-action/analyze@v3
+        with:
+          # Private repositories may not have Code Scanning enabled during the
+          # pre-publication gate; still execute the analysis without uploading
+          # SARIF. Public maintainers can remove this override after enabling it.
+          upload: false
