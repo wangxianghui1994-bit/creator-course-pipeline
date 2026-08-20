@@ -80,7 +80,7 @@ def build_demo(output: Path, force: bool = False) -> Path:
         _run([
             "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
             "-f", "lavfi", "-i", f"color=c={color}:s={width}x{height}",
-            "-frames:v", "1", str(output / filename),
+            "-frames:v", "1", "-pix_fmt", "rgb24", str(output / filename),
         ])
 
     # Keep the generated demo self-contained so it also works from a fresh
