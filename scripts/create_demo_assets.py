@@ -79,7 +79,8 @@ def build_demo(output: Path, force: bool = False) -> Path:
     for filename, (width, height, color) in covers.items():
         _run([
             "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
-            "-f", "lavfi", "-i", f"color=c={color}:s={width}x{height}",
+            "-f", "lavfi", "-i", f"color=c={color}:s={width}x{height + 1}",
+            "-vf", f"format=rgb24,crop={width}:{height}:0:0",
             "-frames:v", "1", "-pix_fmt", "rgb24", str(output / filename),
         ])
 
