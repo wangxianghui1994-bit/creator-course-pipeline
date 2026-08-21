@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "creator-course-pipeline"
-version = "0.1.0"
+version = "0.2.0"
 description = "Safe Agent Skills for verified course-video packages and unpublished drafts"
 requires-python = ">=3.11"
 license = {file = "LICENSE"}

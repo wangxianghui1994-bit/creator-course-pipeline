@@ -22,3 +22,8 @@ An episode package contains:
 Every file listed under `files` needs a matching SHA-256 value. Relative paths
 only are accepted. The package checker also supports the legacy `assets` and
 `source_sha256` forms for migration, but new packages should use `files`.
+
+`metadata.json` may also contain an optional `source_provenance` object. Its
+public form is provider-neutral and sanitized. A NotebookLM declaration is
+accepted only when it records a captured snapshot, at least one citation, and
+human review. The validator never fetches the source remotely.

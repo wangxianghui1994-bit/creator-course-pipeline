@@ -4,7 +4,7 @@ description: Build, render, inspect, and validate numbered course-video episodes
 license: MIT
 compatibility: Requires Python 3.11+, FFmpeg/ffprobe for complete media QA, and a local adapter registry. Works on Windows and Ubuntu.
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
   repository: "wangxianghui1994-bit/creator-course-pipeline"
 ---
 
@@ -26,6 +26,20 @@ is a production and handoff workflow, not a platform autopilot.
 5. Run `validate_episode_package.py` with FFmpeg available. A media-probe skip
    is an explicit degraded check, not a passing full QA result.
 6. Run `validate_skill_chain.py` before any handoff to the publishing Skill.
+
+## Optional source provenance
+
+`metadata.json` may declare a provider-neutral `source_provenance` object. It
+is optional: packages that use local files, user-provided material, or no
+formal source record can omit it. When the source is NotebookLM, the package
+validator requires a captured source snapshot, at least one recorded citation,
+and human review before course use.
+
+This is a provenance contract, not a NotebookLM connector. The public Skill
+does not log in, query notebooks, read private URLs, or copy raw NotebookLM
+answers into a package. Keep the actual snapshot and trace ledger private and
+put only a sanitized opaque reference in public metadata. See
+`references/source-material-policy.md` for the schema and boundaries.
 
 ## Commands
 
@@ -59,5 +73,7 @@ The package validator checks every manifest asset, rejects absolute and
 traversal paths, verifies SHA-256 values, probes H.264/AAC video streams and
 duration, and checks the actual PNG cover dimensions. The chain validator also
 blocks `scheduled`, `published`, and `url_verified` states and any non-null
-public URL. A package can be locally ready or an unpublished draft, but the
-user must decide any platform submission or public release.
+public URL. It also validates declared source provenance and rejects
+credential-bearing or private source references. A package can be locally
+ready or an unpublished draft, but the user must decide any platform
+submission or public release.

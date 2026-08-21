@@ -1,0 +1,10 @@
+{
+  "example_only": true,
+  "source_provenance": {
+    "source_type": "notebooklm",
+    "source_ref": "opaque-notebooklm-snapshot-example-001",
+    "snapshot_status": "captured",
+    "citation_count": 3,
+    "user_reviewed": true
+  }
+}

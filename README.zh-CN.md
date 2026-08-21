@@ -6,12 +6,12 @@
 ## 两个 Skill
 
 - `course-production-pipeline`：逐集生产、适配器登记、横竖屏渲染、字幕、
-  清单、Hash、FFprobe 媒体验收和草稿链校验。
+  清单、Hash、FFprobe 媒体验收、可选来源追溯和草稿链校验。
 - `multi-platform-publish`：本地关键词规则、发布状态机、草稿安全边界，
   以及 AiToEarn 固定白名单只读查询。
 
-已经打通的是本地生产和验收、关键词由元数据决定、适配器接口和 AiToEarn
-只读能力检查；没有打通也不会假装打通的是自动公开发布、定时发布、删除、
+已经打通的是本地生产和验收、可选来源追溯、关键词由元数据决定、适配器接口
+和 AiToEarn 只读能力检查；没有打通也不会假装打通的是自动公开发布、定时发布、删除、
 评论、任意 URL 请求、上传签名、确认资源、创建 Flow 和浏览器页面脚本。
 
 ## 先跑通演示
@@ -39,6 +39,14 @@ python scripts/install_skills.py --apply
 ```
 
 发现已有同名 Skill 时，脚本会先复制到旁路备份目录并生成 Hash 清单。
+
+## 来源追溯和 NotebookLM
+
+来源追溯是可选项，不使用 NotebookLM 也能运行完整课程生产流程。若在
+`metadata.json` 中声明 `source_type: "notebooklm"`，必须同时提供脱敏的
+`source_ref`、已保存的来源快照、引用数量和人工确认。Skill 只检查这些声明，
+不会登录 NotebookLM、读取私人链接或上传研究内容。具体规则见
+`skills/course-production-pipeline/references/source-material-policy.md`。
 
 ## 关键词
 

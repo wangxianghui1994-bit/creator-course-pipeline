@@ -45,6 +45,96 @@ def test_keyword_policy_uses_metadata_defined_core_and_rejects_unlisted():
     assert any("unlisted" in error for error in result["errors"])
 
 
+def test_source_provenance_is_optional_and_accepts_a_reviewed_notebooklm_source():
+    module = load_module(
+        COURSE_SCRIPTS / "source_provenance.py", "public_source_provenance_optional"
+    )
+    metadata = valid_metadata()
+    assert module.validate_source_provenance(metadata)["ok"]
+    metadata["source_provenance"] = {
+        "source_type": "notebooklm",
+        "source_ref": "notebooklm-course-research-001",
+        "snapshot_status": "captured",
+        "citation_count": 3,
+        "user_reviewed": True,
+    }
+    result = module.validate_source_provenance(metadata)
+    assert result["ok"], result
+    assert any("notebooklm" in check.lower() for check in result["checks"])
+
+
+def test_notebooklm_provenance_requires_snapshot_and_human_review():
+    module = load_module(
+        COURSE_SCRIPTS / "source_provenance.py", "public_source_provenance_rules"
+    )
+    metadata = valid_metadata()
+    metadata["source_provenance"] = {
+        "source_type": "notebooklm",
+        "source_ref": "notebooklm-course-research-001",
+        "snapshot_status": "not_captured",
+        "citation_count": 0,
+        "user_reviewed": False,
+    }
+    result = module.validate_source_provenance(metadata)
+    assert not result["ok"]
+    assert any("snapshot" in error for error in result["errors"])
+    assert any("review" in error for error in result["errors"])
+
+
+def test_source_provenance_rejects_private_urls_and_secret_like_references():
+    module = load_module(
+        COURSE_SCRIPTS / "source_provenance.py", "public_source_provenance_safety"
+    )
+    metadata = valid_metadata()
+    metadata["source_provenance"] = {
+        "source_type": "notebooklm",
+        "source_ref": "https://notebooklm.google.com/notebook/private?access_" + "token=secret",
+        "snapshot_status": "captured",
+        "citation_count": 1,
+        "user_reviewed": True,
+    }
+    result = module.validate_source_provenance(metadata)
+    assert not result["ok"]
+    assert any("private" in error or "secret" in error for error in result["errors"])
+
+
+def test_public_notebooklm_example_uses_the_sanitized_contract():
+    module = load_module(
+        COURSE_SCRIPTS / "source_provenance.py", "public_source_provenance_example"
+    )
+    example = json.loads(
+        (ROOT / "examples" / "yangming-course" / "source-provenance.example.json")
+        .read_text(encoding="utf-8")
+    )
+    result = module.validate_source_provenance(example)
+    assert result["ok"], result
+
+
+def test_package_validator_checks_declared_source_provenance(tmp_path):
+    module = load_module(
+        COURSE_SCRIPTS / "validate_episode_package.py", "public_package_source_validator"
+    )
+    package = tmp_path / "package"
+    package.mkdir()
+    metadata = valid_metadata()
+    metadata["source_provenance"] = {
+        "source_type": "notebooklm",
+        "source_ref": "notebooklm-course-research-001",
+        "snapshot_status": "not_captured",
+        "citation_count": 0,
+        "user_reviewed": False,
+    }
+    for name, payload in {
+        "metadata.json": metadata,
+        "qa-report.json": {"status": "pass", "manifest_hashes_match": True},
+        "publish-manifest.json": {"files": {}, "asset_sha256": {}},
+        "publish-state.json": {"status": "package_ready", "platforms": {}},
+    }.items():
+        (package / name).write_text(json.dumps(payload), encoding="utf-8")
+    result = module.validate_episode(package, skip_media_probe=True)
+    assert any("source provenance" in error for error in result["errors"])
+
+
 def test_keyword_policy_reports_empty_duplicate_and_order_errors():
     module = load_module(
         PUBLISH_SCRIPTS / "validate_publish_metadata.py", "public_metadata_validator_errors"
@@ -146,6 +236,7 @@ def test_installer_backs_up_existing_skill_before_apply(tmp_path):
     )
     assert result.returncode == 0, result.stderr
     assert (target / "course-production-pipeline" / "SKILL.md").is_file()
+    assert not list(target.rglob("__pycache__"))
     backups = list((tmp_path / "creator-course-pipeline-backups").rglob("old.txt"))
     assert backups and backups[0].read_text(encoding="utf-8") == "old"
 

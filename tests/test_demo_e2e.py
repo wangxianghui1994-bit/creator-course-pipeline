@@ -1,4 +1,5 @@
 import importlib.util
+import hashlib
 import json
 import shutil
 import subprocess
@@ -35,6 +36,33 @@ def test_synthetic_media_passes_full_chain(tmp_path):
     blocked = chain.validate_chain(package, package.parent / "registry.json")
     assert not blocked["ok"]
     assert any("safe draft boundary" in error for error in blocked["errors"])
+
+
+@pytest.mark.skipif(not shutil.which("ffmpeg") or not shutil.which("ffprobe"), reason="FFmpeg is required")
+def test_reviewed_notebooklm_provenance_passes_full_chain(tmp_path):
+    generator = load(ROOT / "scripts" / "create_demo_assets.py", "demo_generator_notebooklm")
+    package = generator.build_demo(tmp_path / "generated")
+    metadata_path = package / "metadata.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    metadata["source_provenance"] = {
+        "source_type": "notebooklm",
+        "source_ref": "notebooklm-course-research-001",
+        "snapshot_status": "captured",
+        "citation_count": 3,
+        "user_reviewed": True,
+    }
+    metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+    manifest_path = package / "publish-manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    digest = hashlib.sha256(metadata_path.read_bytes()).hexdigest().upper()
+    manifest["asset_sha256"]["metadata.json"] = digest
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    chain = load(
+        ROOT / "skills" / "course-production-pipeline" / "scripts" / "validate_skill_chain.py",
+        "demo_chain_validator_notebooklm",
+    )
+    result = chain.validate_chain(package, package.parent / "registry.json")
+    assert result["ok"], result
 
 
 @pytest.mark.skipif(not shutil.which("ffmpeg") or not shutil.which("ffprobe"), reason="FFmpeg is required")

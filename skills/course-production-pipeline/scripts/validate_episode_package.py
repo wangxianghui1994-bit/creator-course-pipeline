@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import shutil
 import struct
@@ -34,6 +35,16 @@ EXPECTED_COVERS = {
     "cover-youtube-1280x720.png": (1280, 720),
     "cover-douyin-1080x1920.png": (1080, 1920),
 }
+
+
+def _validate_source_provenance(metadata: dict[str, Any]) -> dict[str, Any]:
+    path = Path(__file__).with_name("source_provenance.py")
+    spec = importlib.util.spec_from_file_location("creator_course_source_provenance", path)
+    if spec is None or spec.loader is None:
+        return {"ok": False, "errors": [f"source provenance validator unavailable: {path}"], "warnings": [], "checks": []}
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.validate_source_provenance(metadata)
 
 
 def read_json(path: Path, errors: list[str]) -> dict[str, Any]:
@@ -188,6 +199,9 @@ def validate_episode(directory: Path, skip_hash: bool = False, skip_media_probe:
     for platform in ("bilibili", "douyin", "youtube"):
         if platform not in metadata:
             errors.append(f"metadata.json missing platform: {platform}")
+    source_result = _validate_source_provenance(metadata)
+    errors.extend(f"source provenance: {error}" for error in source_result["errors"])
+    warnings.extend(f"source provenance: {warning}" for warning in source_result["warnings"])
     qa = parsed.get("qa-report.json", {})
     if qa.get("status") != "pass":
         errors.append("qa-report.json status must be pass")
