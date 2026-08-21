@@ -13,6 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL_NAMES = ("course-production-pipeline", "multi-platform-publish")
+COPY_IGNORE = shutil.ignore_patterns("__pycache__", "*.pyc")
 
 
 def _sha256(path: Path) -> str:
@@ -63,7 +64,7 @@ def apply_install(target: Path) -> dict[str, object]:
             shutil.copytree(destination, backup)
             backups.append({"skill": name, "path": str(backup), "sha256": _manifest(backup)})
             shutil.rmtree(destination)
-        shutil.copytree(source, destination)
+        shutil.copytree(source, destination, ignore=COPY_IGNORE)
         installed.append({"skill": name, "path": str(destination), "sha256": _manifest(destination)})
     result = {"mode": "applied", "target": str(target), "backups": backups, "installed": installed}
     if backups:
@@ -78,7 +79,9 @@ def main() -> int:
     args = parser.parse_args()
     target = args.target.expanduser().resolve()
     result = apply_install(target) if args.apply else plan_install(target)
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    # Keep subprocess output decodable on Windows even when the target path
+    # contains non-ASCII characters and the caller assumes UTF-8.
+    print(json.dumps(result, ensure_ascii=True, indent=2))
     return 0
 
 

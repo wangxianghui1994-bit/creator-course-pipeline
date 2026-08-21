@@ -10,8 +10,8 @@ human-controlled step.
 ## What is included
 
 - `course-production-pipeline`: numbered episode workflow, adapter registry,
-  local FFmpeg rendering, subtitle burn-in, manifests, media QA, and draft
-  chain validation.
+  local FFmpeg rendering, subtitle burn-in, manifests, media QA, optional
+  source provenance, and draft chain validation.
 - `multi-platform-publish`: canonical keyword validation, draft-state checks,
   and a fixed allow-list AiToEarn read-only client.
 - A synthetic demo that generates its own video, audio, subtitles, and covers.
@@ -22,8 +22,8 @@ human-controlled step.
 
 Implemented: local package generation, all-asset SHA-256 checks, path-traversal
 protection, FFprobe media checks, cover dimension checks, adapter interfaces,
-canonical keywords, safe state-machine checks, and read-only AiToEarn capability
-queries.
+optional source provenance checks, canonical keywords, safe state-machine
+checks, and read-only AiToEarn capability queries.
 
 Not implemented: automatic public publishing, scheduled publishing, deletion,
 comments, arbitrary URL requests, upload signing, asset confirmation, Flow
@@ -49,6 +49,15 @@ python scripts/install_skills.py --apply
 Use `--target` to preview or install into another skills directory. `--apply`
 backs up existing matching Skill directories to a sibling backup directory and
 prints SHA-256 manifests.
+
+## Source provenance
+
+Source provenance is optional. A package can use local files or user-provided
+material without NotebookLM. If `metadata.json` declares `source_type` as
+`notebooklm`, the validator requires a captured snapshot, at least one
+recorded citation, and human review. The Skill does not connect to NotebookLM
+or copy private research into the package; it checks a sanitized reference.
+See `skills/course-production-pipeline/references/source-material-policy.md`.
 
 ## Keyword metadata
 

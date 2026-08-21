@@ -3,9 +3,10 @@
 This table describes the boundary of the public release. It is deliberately
 not a record of any user's accounts or drafts.
 
-| Area | v0.1.0 behavior | Evidence boundary |
+| Area | v0.2.0 behavior | Evidence boundary |
 | --- | --- | --- |
 | Local course package | Implemented | Synthetic FFmpeg/FFprobe end-to-end test |
+| Optional source provenance | Implemented | Sanitized metadata contract and NotebookLM safety tests; no remote connector |
 | Canonical keywords | Implemented | Generic core/episode validator tests and metadata-only examples |
 | Draft state machine | Implemented | Public states are blocked by the chain validator |
 | AiToEarn platform discovery | Read-only GET implemented | A maintainer smoke test returned `code=0` and a platform list; this proves read discovery only |
