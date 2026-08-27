@@ -49,7 +49,12 @@ def validate() -> list[str]:
             errors.append(f"description is required: {name}")
         if not frontmatter.get("license"):
             errors.append(f"license is required: {name}")
-        if not frontmatter.get("compatibility"):
+        # The Agent Skills frontmatter keeps compatibility inside the allowed
+        # metadata mapping rather than as a top-level key.
+        metadata_compatibility = re.search(
+            r"(?m)^  compatibility:\s*(.+)$", skill_file.read_text(encoding="utf-8")
+        )
+        if not metadata_compatibility:
             errors.append(f"compatibility is required: {name}")
         if not (directory / "agents" / "openai.yaml").is_file():
             errors.append(f"missing agents/openai.yaml: {name}")

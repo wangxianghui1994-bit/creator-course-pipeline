@@ -22,6 +22,11 @@ def valid_metadata(core=None):
     core = core or ["alpha", "beta"]
     allowed = core + ["episode-topic", "decision"]
     return {
+        "disclosure_policy": {
+            "mode": "user_opt_out_by_default",
+            "platform_declaration": "do_not_proactively_set",
+            "mandatory_gate": "pause_for_user_review",
+        },
         "keyword_policy": {
             "core": core,
             "episode": ["episode-topic", "decision"],
@@ -43,6 +48,20 @@ def test_keyword_policy_uses_metadata_defined_core_and_rejects_unlisted():
     result = module.validate_metadata(broken)
     assert not result["ok"]
     assert any("unlisted" in error for error in result["errors"])
+
+
+def test_disclosure_policy_is_validated_and_does_not_fill_platform_fields():
+    module = load_module(
+        PUBLISH_SCRIPTS / "validate_publish_metadata.py", "public_disclosure_policy"
+    )
+    result = module.validate_metadata(valid_metadata())
+    assert result["ok"], result
+    assert any("disclosure policy" in check for check in result["checks"])
+    broken = valid_metadata()
+    broken["disclosure_policy"]["mode"] = "always_disclose"
+    result = module.validate_metadata(broken)
+    assert not result["ok"]
+    assert any("disclosure_policy.mode" in error for error in result["errors"])
 
 
 def test_source_provenance_is_optional_and_accepts_a_reviewed_notebooklm_source():

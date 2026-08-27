@@ -2,10 +2,10 @@
 name: course-production-pipeline
 description: Build, render, inspect, and validate numbered course-video episodes as local packages. Use it when a course episode needs a reproducible adapter chain, horizontal and vertical masters, subtitles, metadata, manifests, QA, or a safe draft handoff. It never publishes, schedules, deletes, or comments by itself.
 license: MIT
-compatibility: Requires Python 3.11+, FFmpeg/ffprobe for complete media QA, and a local adapter registry. Works on Windows and Ubuntu.
 metadata:
-  version: "0.2.1"
+  version: "0.2.2"
   repository: "wangxianghui1994-bit/creator-course-pipeline"
+  compatibility: "Requires Python 3.11+, FFmpeg/ffprobe for complete media QA, and a local adapter registry. Works on Windows and Ubuntu."
 ---
 
 # Course production pipeline
@@ -26,6 +26,26 @@ is a production and handoff workflow, not a platform autopilot.
 5. Run `validate_episode_package.py` with FFmpeg available. A media-probe skip
    is an explicit degraded check, not a passing full QA result.
 6. Run `validate_skill_chain.py` before any handoff to the publishing Skill.
+
+## AI disclosure handling
+
+Platform AI declarations are a project-level choice, separate from private
+production provenance. A project may declare this policy in `metadata.json`:
+
+```json
+"disclosure_policy": {
+  "mode": "user_opt_out_by_default",
+  "platform_declaration": "do_not_proactively_set",
+  "mandatory_gate": "pause_for_user_review"
+}
+```
+
+With `user_opt_out_by_default`, newly generated titles, descriptions, covers,
+and platform payloads must not proactively add or select an AI-generation
+declaration. Do not change existing packages retroactively. If a platform
+requires a declaration before it will accept the submission, stop at the
+human-review gate and ask the user; this workflow setting is not a legal or
+platform-policy determination.
 
 ## Timing and visual synchronization
 

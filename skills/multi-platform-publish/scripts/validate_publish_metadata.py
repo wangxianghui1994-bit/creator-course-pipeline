@@ -19,6 +19,10 @@ PLATFORM_FIELDS = {
     "youtube": ("tags",),
 }
 
+DISCLOSURE_MODES = {"user_opt_out_by_default", "user_opt_in", "platform_required"}
+PLATFORM_DECLARATIONS = {"do_not_proactively_set", "user_decides", "required"}
+MANDATORY_GATES = {"pause_for_user_review", "block_until_resolved"}
+
 
 def _is_string_list(value: Any, *, allow_empty: bool = False) -> bool:
     return (
@@ -63,9 +67,39 @@ def _validate_list(
         errors.append(f"{platform}.{field} core keyword order must be: {' → '.join(core)}")
 
 
+def _validate_disclosure_policy(metadata: dict[str, Any], errors: list[str], checks: list[str]) -> None:
+    policy = metadata.get("disclosure_policy")
+    if policy is None:
+        return
+    if not isinstance(policy, dict):
+        errors.append("disclosure_policy must be an object")
+        return
+    mode = policy.get("mode")
+    if mode not in DISCLOSURE_MODES:
+        errors.append(
+            "disclosure_policy.mode must be one of: "
+            + ", ".join(sorted(DISCLOSURE_MODES))
+        )
+    declaration = policy.get("platform_declaration")
+    if declaration not in PLATFORM_DECLARATIONS:
+        errors.append(
+            "disclosure_policy.platform_declaration must be one of: "
+            + ", ".join(sorted(PLATFORM_DECLARATIONS))
+        )
+    gate = policy.get("mandatory_gate")
+    if gate not in MANDATORY_GATES:
+        errors.append(
+            "disclosure_policy.mandatory_gate must be one of: "
+            + ", ".join(sorted(MANDATORY_GATES))
+        )
+    if not errors:
+        checks.append(f"disclosure policy: {mode}")
+
+
 def validate_metadata(metadata: dict[str, Any], platforms: list[str] | None = None) -> dict[str, Any]:
     errors: list[str] = []
     checks: list[str] = []
+    _validate_disclosure_policy(metadata, errors, checks)
     policy = metadata.get("keyword_policy")
     if not isinstance(policy, dict):
         return {"ok": False, "errors": ["keyword_policy is required"], "checks": checks}

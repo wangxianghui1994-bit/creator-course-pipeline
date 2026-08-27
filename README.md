@@ -17,6 +17,8 @@ human-controlled step.
 - A synthetic demo that generates its own video, audio, subtitles, and covers.
 - A preview-first installer that backs up an existing Skill before applying a
   replacement.
+- A configurable platform-disclosure policy; it does not silently select an AI
+  declaration and pauses if a platform makes one mandatory.
 
 ## Boundaries
 
@@ -69,6 +71,11 @@ See `examples/demo/metadata.json` for a generic course and
 
 Platform suggestions outside `core + episode` fail validation. Douyin
 `keywords` and `hashtags` are kept as separate fields.
+
+Platform AI declarations are controlled separately through
+`disclosure_policy`. The current example uses `user_opt_out_by_default`, which
+leaves that field unset unless the user changes it; a mandatory platform gate
+still requires manual review.
 
 ## AiToEarn read-only query
 

@@ -1,6 +1,11 @@
 {
   "title": "AI时代的知行合一（示例元数据）",
   "description": "只展示课程元数据结构，不包含真实视频、声音、账号、草稿或完整课程稿件。",
+  "disclosure_policy": {
+    "mode": "user_opt_out_by_default",
+    "platform_declaration": "do_not_proactively_set",
+    "mandatory_gate": "pause_for_user_review"
+  },
   "keyword_policy": {
     "core": ["阳明心学", "致良知", "心即理", "企业AI转型", "企业家"],
     "episode": ["知行合一", "AI决策", "修心"],

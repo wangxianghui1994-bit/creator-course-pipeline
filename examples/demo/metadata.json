@@ -1,6 +1,11 @@
 {
   "title": "Synthetic course episode",
   "description": "Generic metadata for the local-only demo.",
+  "disclosure_policy": {
+    "mode": "user_opt_out_by_default",
+    "platform_declaration": "do_not_proactively_set",
+    "mandatory_gate": "pause_for_user_review"
+  },
   "keyword_policy": {
     "core": ["learning", "practice"],
     "episode": ["demo-video", "local-qa"],
