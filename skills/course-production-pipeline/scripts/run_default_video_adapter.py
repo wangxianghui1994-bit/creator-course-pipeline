@@ -88,10 +88,16 @@ def load_job(
 
     source_video = _resolve_path(str(raw_job.get("source_video", "")), config_path.parent)
     subtitles = _resolve_path(str(raw_job.get("subtitles", "")), config_path.parent)
+    background_audio_value = raw_job.get("background_audio")
+    background_audio = None
+    if background_audio_value:
+        background_audio = _resolve_path(str(background_audio_value), config_path.parent)
     if not source_video.is_file():
         raise FileNotFoundError(f"source_video does not exist: {source_video}")
     if not subtitles.is_file():
         raise FileNotFoundError(f"subtitles do not exist: {subtitles}")
+    if background_audio is not None and not background_audio.is_file():
+        raise FileNotFoundError(f"background_audio does not exist: {background_audio}")
     try:
         start_seconds = float(raw_job.get("start_seconds", 0))
         duration_seconds = float(raw_job["duration_seconds"])
@@ -110,6 +116,8 @@ def load_job(
         "start_seconds": start_seconds, "duration_seconds": duration_seconds,
         "output": str(output), "work_dir": str(work_dir),
     })
+    if background_audio is not None:
+        job["background_audio"] = str(background_audio)
     return job
 
 

@@ -82,7 +82,7 @@ def test_media_probe_rejects_video_without_audio_and_wrong_cover_size(tmp_path):
          "-i", "color=c=black:s=10x10", "-frames:v", "1", str(wrong_cover)],
         check=True,
     )
-    shutil.copy2(wrong_cover, package / "cover-youtube-1280x720.png")
+    shutil.copy2(wrong_cover, package / "cover-youtube.png")
     validator = load(
         ROOT / "skills" / "course-production-pipeline" / "scripts" / "validate_episode_package.py",
         "negative_package_validator",
@@ -91,3 +91,18 @@ def test_media_probe_rejects_video_without_audio_and_wrong_cover_size(tmp_path):
     assert not result["ok"]
     assert any("audio stream" in error for error in result["errors"])
     assert any("cover-youtube" in error for error in result["errors"])
+
+
+@pytest.mark.skipif(not shutil.which("ffmpeg") or not shutil.which("ffprobe"), reason="FFmpeg is required")
+def test_manifest_becomes_invalid_after_asset_mutation(tmp_path):
+    generator = load(ROOT / "scripts" / "create_demo_assets.py", "demo_generator_manifest_mutation")
+    package = generator.build_demo(tmp_path / "generated")
+    subtitle = package / "subtitles-zh-Hans.srt"
+    subtitle.write_text(subtitle.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+    validator = load(
+        ROOT / "skills" / "course-production-pipeline" / "scripts" / "validate_episode_package.py",
+        "manifest_mutation_validator",
+    )
+    result = validator.validate_episode(package, skip_media_probe=True)
+    assert not result["ok"]
+    assert any("SHA-256 mismatch" in error for error in result["errors"])

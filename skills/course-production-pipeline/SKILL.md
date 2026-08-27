@@ -1,9 +1,9 @@
 ---
 name: course-production-pipeline
-description: Build, render, inspect, and validate numbered course-video episodes as local packages. Use it when a course episode needs a reproducible adapter chain, horizontal and vertical masters, subtitles, metadata, manifests, QA, or a safe draft handoff. It never publishes, schedules, deletes, or comments by itself.
+description: Use when a numbered course episode needs reproducible rendering, narration and background-sound mixing, word-aligned subtitles, native horizontal/vertical layouts, platform-safe covers, package QA, or a guarded draft handoff.
 license: MIT
 metadata:
-  version: "0.2.2"
+  version: "0.3.0"
   repository: "wangxianghui1994-bit/creator-course-pipeline"
   compatibility: "Requires Python 3.11+, FFmpeg/ffprobe for complete media QA, and a local adapter registry. Works on Windows and Ubuntu."
 ---
@@ -21,8 +21,9 @@ is a production and handoff workflow, not a platform autopilot.
 3. Render locally with `run_default_video_adapter.py`. The new adapter contract
    is `render(job)`; the older `render_clean + finish + scene_symbol` contract
    remains supported for private adapters.
-4. Build a package containing the two videos, three covers, SRT, metadata, QA,
-   manifest, and publish-state ledger.
+4. Build a package containing the two videos, declared platform cover profiles,
+   SRT, metadata, QA, manifest, and publish-state ledger. New packages use
+   package schema `1.2`; schema `1.1` remains readable as legacy.
 5. Run `validate_episode_package.py` with FFmpeg available. A media-probe skip
    is an explicit degraded check, not a passing full QA result.
 6. Run `validate_skill_chain.py` before any handoff to the publishing Skill.
@@ -46,6 +47,28 @@ declaration. Do not change existing packages retroactively. If a platform
 requires a declaration before it will accept the submission, stop at the
 human-review gate and ask the user; this workflow setting is not a legal or
 platform-policy determination.
+
+## Audio, subtitles, and covers
+
+New schema `1.2` packages must declare `audio_design` and a `subtitle_acceptance`
+record in QA. The default background mode is `light_music`; `ambience` and an
+explicitly justified `intentional_none` are also valid. A used background asset
+must be listed in the manifest with a SHA-256 and cleared/original/public-domain
+or licensed rights. Human mix and speech-intelligibility review are required.
+The public FFmpeg adapter accepts `background_audio` and a low `background_gain`
+for a voice-first mix; private adapters must provide an equivalent receipt.
+
+Formal subtitles must come from word-aligned timing or a manually verified
+timing document. Fixed-character average splitting is preview-only. Review
+semantic phrases, proper nouns, overlap, and both landscape and portrait safe
+areas after subtitles are burned in. Keep subtitles as the final video layer.
+
+Declare platform-native `cover_profiles` rather than inferring a cover from a
+video frame. The validator checks the declared PNG dimensions; a dedicated
+layout is required for new packages. Recheck platform requirements when they
+change instead of hard-coding a stale crop.
+
+See `references/production-acceptance.md` for the failure-recovery checklist.
 
 ## Timing and visual synchronization
 

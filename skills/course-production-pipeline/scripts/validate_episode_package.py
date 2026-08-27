@@ -19,14 +19,16 @@ from pathlib import Path
 from typing import Any
 
 
-REQUIRED_FILES = (
+BASE_REQUIRED_FILES = (
     "master-16x9.mp4", "douyin-9x16.mp4",
-    "cover-bilibili-1146x717.png", "cover-youtube-1280x720.png", "cover-douyin-1080x1920.png",
     "subtitles-zh-Hans.srt", "metadata.json", "qa-report.json", "publish-manifest.json", "publish-state.json",
+)
+LEGACY_COVER_FILES = (
+    "cover-bilibili-1146x717.png", "cover-youtube-1280x720.png", "cover-douyin-1080x1920.png",
 )
 VALID_LOCAL_STATES = {
     "planned", "source_scanned", "script_ready", "audio_ready", "sync_ready", "rendered",
-    "local_ready", "metadata_ready", "package_ready", "uploading", "uploaded_draft",
+    "local_ready", "metadata_ready", "package_ready", "uploading", "uploaded_draft", "draft_saved",
     "remote_verified", "user_reviewed", "scheduled", "published", "url_verified",
 }
 PUBLIC_STATES = {"scheduled", "published", "url_verified"}
@@ -34,6 +36,12 @@ EXPECTED_COVERS = {
     "cover-bilibili-1146x717.png": (1146, 717),
     "cover-youtube-1280x720.png": (1280, 720),
     "cover-douyin-1080x1920.png": (1080, 1920),
+}
+V12_COVER_PROFILES = {
+    "bilibili-landscape": (1146, 717),
+    "youtube-landscape": (1280, 720),
+    "douyin-landscape": (1440, 1080),
+    "douyin-portrait": (1080, 1440),
 }
 
 
@@ -123,6 +131,93 @@ def manifest_assets(manifest: dict[str, Any], errors: list[str]) -> list[tuple[s
     return result
 
 
+def validate_production_acceptance(
+    metadata: dict[str, Any], manifest: dict[str, Any], qa: dict[str, Any]
+) -> dict[str, Any]:
+    """Validate the opt-in schema 1.2 production acceptance contract.
+
+    Schema 1.1 packages remain readable for backward compatibility. New
+    packages must make the audio, subtitle, and platform-cover decisions
+    explicit so an omitted background track or unsafe cover cannot look like
+    a successful local render.
+    """
+    errors: list[str] = []
+    warnings: list[str] = []
+    checks: list[str] = []
+    schema = str(metadata.get("package_schema_version", "1.1"))
+    if schema == "1.1":
+        warnings.append("legacy package schema 1.1: production acceptance fields are not enforced")
+        return {"ok": True, "errors": errors, "warnings": warnings, "checks": checks}
+    if schema != "1.2":
+        errors.append(f"unsupported package_schema_version: {schema!r}")
+        return {"ok": False, "errors": errors, "warnings": warnings, "checks": checks}
+
+    audio = metadata.get("audio_design")
+    if not isinstance(audio, dict):
+        errors.append("audio_design must be declared for package schema 1.2")
+    else:
+        mode = audio.get("background_mode")
+        if mode not in {"light_music", "ambience", "intentional_none"}:
+            errors.append("audio_design.background_mode must be light_music, ambience, or intentional_none")
+        if mode in {"light_music", "ambience"}:
+            asset_id = audio.get("background_asset_id")
+            if not isinstance(asset_id, str) or not asset_id.strip():
+                errors.append("audio_design.background_asset_id is required when background sound is used")
+            else:
+                entries = {asset: (filename, expected) for asset, filename, expected in manifest_assets(manifest, [])}
+                if asset_id not in entries:
+                    errors.append(f"audio background asset is not listed in manifest: {asset_id}")
+            if audio.get("rights_status") not in {"cleared", "original", "public_domain", "licensed"}:
+                errors.append("audio_design.rights_status must confirm a cleared/original/public_domain/licensed source")
+        elif mode == "intentional_none" and not str(audio.get("reason") or "").strip():
+            errors.append("audio_design.reason is required when background sound is intentionally omitted")
+        if audio.get("mix_reviewed") is not True:
+            errors.append("audio_design.mix_reviewed must be true")
+        if audio.get("speech_intelligibility_reviewed") is not True:
+            errors.append("audio_design.speech_intelligibility_reviewed must be true")
+        if not errors:
+            checks.append(f"audio design checked: {mode}")
+
+    subtitle = qa.get("subtitle_acceptance")
+    if not isinstance(subtitle, dict):
+        errors.append("qa-report.json must declare subtitle_acceptance for package schema 1.2")
+    else:
+        if subtitle.get("timing_source") not in {"word_alignment", "manual_verified"}:
+            errors.append("subtitle_acceptance.timing_source must be word_alignment or manual_verified")
+        for field in (
+            "semantic_segmentation", "proper_nouns_reviewed", "landscape_safe_area_reviewed",
+            "vertical_safe_area_reviewed", "full_listen_reviewed",
+        ):
+            if subtitle.get(field) is not True:
+                errors.append(f"subtitle_acceptance.{field} must be true")
+        if not any("subtitle_acceptance" in error for error in errors):
+            checks.append("subtitle acceptance checked")
+
+    profiles = metadata.get("cover_profiles")
+    if not isinstance(profiles, list):
+        errors.append("cover_profiles must be a list for package schema 1.2")
+    else:
+        by_id = {item.get("id"): item for item in profiles if isinstance(item, dict)}
+        for profile_id, expected_size in V12_COVER_PROFILES.items():
+            profile = by_id.get(profile_id)
+            if not isinstance(profile, dict):
+                errors.append(f"cover_profiles missing required profile: {profile_id}")
+                continue
+            if (profile.get("width"), profile.get("height")) != expected_size:
+                errors.append(f"cover profile {profile_id} must be {expected_size[0]}x{expected_size[1]}")
+            filename = profile.get("filename")
+            if not isinstance(filename, str) or not filename.strip():
+                errors.append(f"cover profile {profile_id} must declare filename")
+            if profile.get("source") != "dedicated_layout":
+                errors.append(f"cover profile {profile_id} must use a dedicated_layout, not a screenshot")
+        if len(by_id) != len(profiles):
+            errors.append("cover_profiles entries must have unique ids")
+        if not any("cover profile" in error or "cover_profiles" in error for error in errors):
+            checks.append(f"cover profiles checked: {len(profiles)}")
+
+    return {"ok": not errors, "errors": errors, "warnings": warnings, "checks": checks}
+
+
 def _probe_video(path: Path, errors: list[str], expected_ratio: float) -> None:
     ffprobe = shutil.which("ffprobe")
     if not ffprobe:
@@ -186,7 +281,21 @@ def validate_episode(directory: Path, skip_hash: bool = False, skip_media_probe:
     if not directory.is_dir():
         return {"ok": False, "errors": [f"episode directory not found: {directory}"], "warnings": []}
 
-    for name in REQUIRED_FILES:
+    metadata_path = directory / "metadata.json"
+    metadata_preview = read_json(metadata_path, errors) if metadata_path.is_file() else {}
+    schema = str(metadata_preview.get("package_schema_version", "1.1"))
+    required_files = list(BASE_REQUIRED_FILES)
+    if schema == "1.2":
+        profiles = metadata_preview.get("cover_profiles")
+        if isinstance(profiles, list):
+            required_files.extend(
+                str(profile.get("filename"))
+                for profile in profiles
+                if isinstance(profile, dict) and isinstance(profile.get("filename"), str)
+            )
+    else:
+        required_files.extend(LEGACY_COVER_FILES)
+    for name in required_files:
         path = directory / name
         if not path.is_file():
             errors.append(f"missing required file: {name}")
@@ -211,7 +320,18 @@ def validate_episode(directory: Path, skip_hash: bool = False, skip_media_probe:
     if state.get("status") not in VALID_LOCAL_STATES:
         errors.append(f"unknown publish-state status: {state.get('status')!r}")
     manifest = parsed.get("publish-manifest.json", {})
+    production_result = validate_production_acceptance(metadata, manifest, qa)
+    errors.extend(f"production acceptance: {error}" for error in production_result["errors"])
+    warnings.extend(f"production acceptance: {warning}" for warning in production_result["warnings"])
     assets = manifest_assets(manifest, errors)
+    declared_filenames = {filename for _, filename, _ in assets}
+    # QA and state ledgers are control records created after the manifest and
+    # are deliberately excluded; every media, subtitle, cover, and metadata
+    # asset must still be declared and hashed.
+    manifest_required_files = [name for name in required_files if name not in {"qa-report.json", "publish-manifest.json", "publish-state.json"}]
+    for required_name in manifest_required_files:
+        if (directory / required_name).is_file() and required_name not in declared_filenames:
+            errors.append(f"manifest must declare required asset: {required_name}")
     for asset_id, filename, expected in assets:
         asset_path, path_error = _safe_asset_path(directory, filename)
         if path_error:
@@ -233,12 +353,24 @@ def validate_episode(directory: Path, skip_hash: bool = False, skip_media_probe:
             path = directory / filename
             if path.is_file():
                 _probe_video(path, errors, expected_ratio)
-    for filename, expected_size in EXPECTED_COVERS.items():
-        path = directory / filename
-        if path.is_file():
-            actual_size = _png_size(path)
-            if actual_size != expected_size:
-                errors.append(f"{filename} must be {expected_size[0]}x{expected_size[1]}, got {actual_size}")
+    if schema == "1.2":
+        for profile in metadata.get("cover_profiles", []) if isinstance(metadata.get("cover_profiles"), list) else []:
+            if not isinstance(profile, dict):
+                continue
+            filename = profile.get("filename")
+            expected_size = (profile.get("width"), profile.get("height"))
+            path = directory / str(filename)
+            if path.is_file() and all(isinstance(value, int) for value in expected_size):
+                actual_size = _png_size(path)
+                if actual_size != expected_size:
+                    errors.append(f"{filename} must be {expected_size[0]}x{expected_size[1]}, got {actual_size}")
+    else:
+        for filename, expected_size in EXPECTED_COVERS.items():
+            path = directory / filename
+            if path.is_file():
+                actual_size = _png_size(path)
+                if actual_size != expected_size:
+                    errors.append(f"{filename} must be {expected_size[0]}x{expected_size[1]}, got {actual_size}")
 
     if state.get("status") in {"package_ready", "uploaded_draft", "remote_verified"} and not state.get("subtitle_policy"):
         warnings.append("publish-state.json has no explicit subtitle_policy")

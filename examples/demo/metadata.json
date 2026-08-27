@@ -1,6 +1,20 @@
 {
   "title": "Synthetic course episode",
   "description": "Generic metadata for the local-only demo.",
+  "package_schema_version": "1.2",
+  "audio_design": {
+    "background_mode": "light_music",
+    "background_asset_id": "background_audio",
+    "rights_status": "original",
+    "mix_reviewed": true,
+    "speech_intelligibility_reviewed": true
+  },
+  "cover_profiles": [
+    {"id": "bilibili-landscape", "platform": "bilibili", "filename": "cover-bilibili.png", "width": 1146, "height": 717, "source": "dedicated_layout"},
+    {"id": "youtube-landscape", "platform": "youtube", "filename": "cover-youtube.png", "width": 1280, "height": 720, "source": "dedicated_layout"},
+    {"id": "douyin-landscape", "platform": "douyin", "filename": "cover-douyin-landscape.png", "width": 1440, "height": 1080, "source": "dedicated_layout"},
+    {"id": "douyin-portrait", "platform": "douyin", "filename": "cover-douyin-portrait.png", "width": 1080, "height": 1440, "source": "dedicated_layout"}
+  ],
   "disclosure_policy": {
     "mode": "user_opt_out_by_default",
     "platform_declaration": "do_not_proactively_set",

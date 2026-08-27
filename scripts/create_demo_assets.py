@@ -40,6 +40,20 @@ def _metadata() -> dict[str, Any]:
     return {
         "title": "Synthetic course episode",
         "description": "A local-only demonstration package generated with FFmpeg.",
+        "package_schema_version": "1.2",
+        "audio_design": {
+            "background_mode": "light_music",
+            "background_asset_id": "background_audio",
+            "rights_status": "original",
+            "mix_reviewed": True,
+            "speech_intelligibility_reviewed": True,
+        },
+        "cover_profiles": [
+            {"id": "bilibili-landscape", "platform": "bilibili", "filename": "cover-bilibili.png", "width": 1146, "height": 717, "source": "dedicated_layout"},
+            {"id": "youtube-landscape", "platform": "youtube", "filename": "cover-youtube.png", "width": 1280, "height": 720, "source": "dedicated_layout"},
+            {"id": "douyin-landscape", "platform": "douyin", "filename": "cover-douyin-landscape.png", "width": 1440, "height": 1080, "source": "dedicated_layout"},
+            {"id": "douyin-portrait", "platform": "douyin", "filename": "cover-douyin-portrait.png", "width": 1080, "height": 1440, "source": "dedicated_layout"},
+        ],
         "keyword_policy": {"core": core, "episode": episode, "reject_unlisted": True},
         "douyin": {"keywords": values, "hashtags": values},
         "bilibili": {"tags": values},
@@ -58,7 +72,13 @@ def build_demo(output: Path, force: bool = False) -> Path:
     package = output / "EP00-demo"
     package.mkdir()
     source = output / "source.mp4"
+    background_audio = output / "background-audio.wav"
     subtitles = output / "subtitles-zh-Hans.srt"
+    _run([
+        "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+        "-f", "lavfi", "-i", "sine=frequency=220:sample_rate=48000",
+        "-t", "6", "-ac", "1", "-c:a", "pcm_s16le", str(background_audio),
+    ])
     _run([
         "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
         "-f", "lavfi", "-i", "color=c=0x263238:s=1280x720:r=30",
@@ -72,9 +92,10 @@ def build_demo(output: Path, force: bool = False) -> Path:
         encoding="utf-8",
     )
     covers = {
-        "cover-bilibili-1146x717.png": (1146, 717, "0x455A64"),
-        "cover-youtube-1280x720.png": (1280, 720, "0x37474F"),
-        "cover-douyin-1080x1920.png": (1080, 1920, "0x546E7A"),
+        "cover-bilibili.png": (1146, 717, "0x455A64"),
+        "cover-youtube.png": (1280, 720, "0x37474F"),
+        "cover-douyin-landscape.png": (1440, 1080, "0x546E7A"),
+        "cover-douyin-portrait.png": (1080, 1440, "0x607D8B"),
     }
     for filename, (width, height, color) in covers.items():
         _run([
@@ -103,11 +124,13 @@ def build_demo(output: Path, force: bool = False) -> Path:
         "jobs": {
             "master": {
                 "source_video": "source.mp4", "subtitles": "subtitles-zh-Hans.srt",
+                "background_audio": "background-audio.wav", "background_gain": 0.08,
                 "output": "EP00-demo/master-16x9.mp4", "work_dir": "work",
                 "duration_seconds": 5, "width": 1920, "height": 1080,
             },
             "vertical": {
                 "source_video": "source.mp4", "subtitles": "subtitles-zh-Hans.srt",
+                "background_audio": "background-audio.wav", "background_gain": 0.08,
                 "output": "EP00-demo/douyin-9x16.mp4", "work_dir": "work",
                 "duration_seconds": 5, "width": 1080, "height": 1920,
             },
@@ -117,11 +140,17 @@ def build_demo(output: Path, force: bool = False) -> Path:
         job = load_job(config, job_id, registry_path=registry)
         render_job(job, force=False)
     shutil.copy2(subtitles, package / subtitles.name)
+    shutil.copy2(background_audio, package / background_audio.name)
     for filename in covers:
         shutil.copy2(output / filename, package / filename)
     metadata = _metadata()
     (package / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
-    file_map = {path.name: path.name for path in sorted(package.iterdir()) if path.is_file()}
+    file_map = {
+        path.name: path.name
+        for path in sorted(package.iterdir())
+        if path.is_file() and path.name != background_audio.name
+    }
+    file_map["background_audio"] = background_audio.name
     # The manifest itself is added after the initial file map; it describes the
     # media, covers, subtitles, and metadata but not its own bytes.
     hashes = {asset_id: _hash(package / filename) for asset_id, filename in file_map.items()}
@@ -139,6 +168,15 @@ def build_demo(output: Path, force: bool = False) -> Path:
     (package / "publish-state.json").write_text(json.dumps(state, indent=2), encoding="utf-8")
     (package / "qa-report.json").write_text(json.dumps({
         "status": "pass", "manifest_hashes_match": True, "media_probe": "ffprobe-required",
+        "audio_design": {"background_asset_id": "background_audio", "mix_receipt": "background_audio_mixed_by_adapter"},
+        "subtitle_acceptance": {
+            "timing_source": "manual_verified",
+            "semantic_segmentation": True,
+            "proper_nouns_reviewed": True,
+            "landscape_safe_area_reviewed": True,
+            "vertical_safe_area_reviewed": True,
+            "full_listen_reviewed": True,
+        },
     }, indent=2), encoding="utf-8")
     return package
 
