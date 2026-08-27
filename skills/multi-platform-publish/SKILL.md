@@ -1,9 +1,9 @@
 ---
 name: multi-platform-publish
-description: Prepare and inspect metadata, keyword policy, unpublished draft state, and read-only AiToEarn capability queries for Bilibili, Douyin, YouTube, and related workflows. Use it when a course package needs canonical keywords, platform payloads, state validation, or a safe handoff. It does not upload, publish, schedule, delete, comment, or automate browser pages.
+description: Use when a course package needs canonical keywords, platform payloads, unpublished-draft state validation, or a guarded Bilibili/Douyin/YouTube browser handoff.
 license: MIT
 metadata:
-  version: "0.1.1"
+  version: "0.2.0"
   repository: "wangxianghui1994-bit/creator-course-pipeline"
   compatibility: "Requires Python 3.11+. AiToEarn read-only queries additionally require AITOEARN_API_KEY in the current process environment and network access."
 ---
@@ -60,6 +60,16 @@ The local ledger may record preparation and an unpublished draft. The course
 chain rejects `scheduled`, `published`, and `url_verified`, and it requires
 null public URLs before publication. Human review and platform confirmation
 remain explicit steps.
+
+## Guarded browser handoff
+
+Browser work is a controlled handoff, not an autopilot. Claim one existing tab,
+batch DOM reads and fills, wait on visible state changes, and distinguish
+`uploading`, `uploaded_draft`, `draft_saved`, and `remote_verified`. Two
+authorization failures trigger one manual file selection rather than another
+authorization loop. Duplicate candidates, mandatory declarations, public or
+destructive actions, ambiguous fields, and any user stop/change request pause
+the handoff. See `references/browser-draft-handoff.md`.
 
 ## AiToEarn read-only client
 

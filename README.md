@@ -10,10 +10,12 @@ human-controlled step.
 ## What is included
 
 - `course-production-pipeline`: numbered episode workflow, adapter registry,
-  local FFmpeg rendering, subtitle burn-in, manifests, media QA, optional
+  local FFmpeg rendering with voice-first background-sound mixing, word-aligned
+  subtitle acceptance, native cover profiles, manifests, media QA, optional
   source provenance, and draft chain validation.
 - `multi-platform-publish`: canonical keyword validation, draft-state checks,
-  and a fixed allow-list AiToEarn read-only client.
+  guarded browser handoff guidance, and a fixed allow-list AiToEarn read-only
+  client.
 - A synthetic demo that generates its own video, audio, subtitles, and covers.
 - A preview-first installer that backs up an existing Skill before applying a
   replacement.
@@ -22,10 +24,11 @@ human-controlled step.
 
 ## Boundaries
 
-Implemented: local package generation, all-asset SHA-256 checks, path-traversal
-protection, FFprobe media checks, cover dimension checks, adapter interfaces,
-optional source provenance checks, canonical keywords, safe state-machine
-checks, and read-only AiToEarn capability queries.
+Implemented: local package generation, voice-first background-sound decisions,
+word-aligned subtitle and native cover acceptance, all-asset SHA-256 checks,
+path-traversal protection, FFprobe media checks, adapter interfaces, optional
+source provenance checks, canonical keywords, safe state-machine checks, and
+read-only AiToEarn capability queries.
 
 Not implemented: automatic public publishing, scheduled publishing, deletion,
 comments, arbitrary URL requests, upload signing, asset confirmation, Flow
@@ -76,6 +79,17 @@ Platform AI declarations are controlled separately through
 `disclosure_policy`. The current example uses `user_opt_out_by_default`, which
 leaves that field unset unless the user changes it; a mandatory platform gate
 still requires manual review.
+
+New package schema `1.2` also requires an explicit `audio_design`, subtitle
+acceptance record, and platform-native `cover_profiles`. The demo defaults to a
+low-level synthetic background track; intentional pure narration must be
+recorded as a deliberate choice. See
+`skills/course-production-pipeline/references/production-acceptance.md`.
+
+Browser assistance remains a guarded handoff: one task owns one existing tab,
+waits on visible state changes, stops after repeated authorization failure, and
+never treats an upload bar as a saved or remotely verified draft. See
+`skills/multi-platform-publish/references/browser-draft-handoff.md`.
 
 ## AiToEarn read-only query
 

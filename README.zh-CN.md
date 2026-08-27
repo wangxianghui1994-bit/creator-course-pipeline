@@ -5,10 +5,11 @@
 
 ## 两个 Skill
 
-- `course-production-pipeline`：逐集生产、适配器登记、横竖屏渲染、字幕、
-  清单、Hash、FFprobe 媒体验收、可选来源追溯和草稿链校验。
-- `multi-platform-publish`：本地关键词规则、发布状态机、草稿安全边界，
-  以及 AiToEarn 固定白名单只读查询。
+- `course-production-pipeline`：逐集生产、适配器登记、旁白优先的背景声音混音、
+  横竖屏渲染、逐字对齐字幕、平台原生封面、清单、Hash、FFprobe 媒体验收、
+  可选来源追溯和草稿链校验。
+- `multi-platform-publish`：本地关键词规则、发布状态机、受控浏览器草稿接管、
+  草稿安全边界，以及 AiToEarn 固定白名单只读查询。
 
 平台“AI生成/自主声明”单独由 `disclosure_policy` 控制；本项目示例默认不主动
 添加，若平台强制要求则停在人工作闸门，不会静默绕过。
@@ -16,6 +17,11 @@
 已经打通的是本地生产和验收、可选来源追溯、关键词由元数据决定、适配器接口
 和 AiToEarn 只读能力检查；没有打通也不会假装打通的是自动公开发布、定时发布、删除、
 评论、任意 URL 请求、上传签名、确认资源、创建 Flow 和浏览器页面脚本。
+
+新包使用 schema `1.2`：必须明确背景声音选择、字幕双方向安全区验收和平台原生
+封面配置。默认是低存在感轻配乐；若有意使用纯人声，必须写明原因并经过人工确认。
+具体生产失败恢复清单见 `skills/course-production-pipeline/references/production-acceptance.md`。
+浏览器接管规范见 `skills/multi-platform-publish/references/browser-draft-handoff.md`。
 
 ## 先跑通演示
 
